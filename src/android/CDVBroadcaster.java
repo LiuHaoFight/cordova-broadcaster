@@ -49,6 +49,24 @@ public class CDVBroadcaster extends CordovaPlugin {
 
   }
 
+  static class WidgetData {
+    final String broadcastClassPath;
+    final String deviceBroadcast;
+    final String equipmentBroadcast;
+    final String sceneBroadcast;
+    final String securityBroadcast;
+    final String updateWidgetConfig;
+
+    WidgetData(final JSONObject userData) { 
+      broadcastClassPath = userData.has("broadcastClassPath") ? userData.optString("broadcastClassPath") : null;
+      broadcastClassPath = userData.has("deviceBroadcast") ? userData.optString("deviceBroadcast") : null;
+      broadcastClassPath = userData.has("equipmentBroadcast") ? userData.optString("equipmentBroadcast") : null;
+      broadcastClassPath = userData.has("sceneBroadcast") ? userData.optString("sceneBroadcast") : null;
+      broadcastClassPath = userData.has("securityBroadcast") ? userData.optString("securityBroadcast") : null;
+      broadcastClassPath = userData.has("updateWidgetConfig") ? userData.optString("updateWidgetConfig") : null;
+    }
+  }
+
   static class BroadcastReceiverHolder {
     final android.content.BroadcastReceiver receiver;
     final boolean isGlobal;
@@ -67,8 +85,8 @@ public class CDVBroadcaster extends CordovaPlugin {
   private static String NULL = "null";
   public static final String EVENTNAME_ERROR = "event name null or empty.";
 
-  final java.util.Map<String, BroadcastReceiverHolder> receiverMap =
-    new java.util.HashMap<String, BroadcastReceiverHolder>(10);
+  final java.util.Map<String, BroadcastReceiverHolder> receiverMap = new java.util.HashMap<String, BroadcastReceiverHolder>(
+      10);
 
   /**
    * fire event in javascript client context
@@ -99,11 +117,12 @@ public class CDVBroadcaster extends CordovaPlugin {
 
   /**
    *
-   * @param receiver  broadcast receiver
-   * @param filter    intent filter
-   * @param isGlobal  global or local flag
+   * @param receiver broadcast receiver
+   * @param filter   intent filter
+   * @param isGlobal global or local flag
    */
-  protected void registerReceiver(android.content.BroadcastReceiver receiver, android.content.IntentFilter filter, boolean isGlobal) {
+  protected void registerReceiver(android.content.BroadcastReceiver receiver, android.content.IntentFilter filter,
+      boolean isGlobal) {
 
     if (isGlobal) {
       this.webView.getContext().registerReceiver(receiver, filter);
@@ -127,9 +146,9 @@ public class CDVBroadcaster extends CordovaPlugin {
 
   /**
    *
-   * @param intent    android intent
-   * @param isGlobal  global or local flag
-   * @return          success
+   * @param intent   android intent
+   * @param isGlobal global or local flag
+   * @return success
    */
   protected boolean sendBroadcast(android.content.Intent intent, boolean isGlobal) {
     Log.v(TAG, format("sendBroadcast isGlobal=%b", isGlobal));
@@ -180,9 +199,43 @@ public class CDVBroadcaster extends CordovaPlugin {
   }
 
   /**
+   * @param eventNameOrAction
+   * @param userData
+   * @param isGlobal
+   */
+  private void fireWidgetEvent(final String eventNameOrAction, WidgetData userData, boolean isGlobal) {
+    if (eventNameOrAction == null) {
+      throw new IllegalArgumentException("eventName parameter is null!");
+    }
+    if (userData.updateWidgetConfig == null) {
+      throw new IllegalArgumentException("updateWidgetConfig is null!");
+    }
+    final Intent intent = new Intent(userData.updateWidgetConfig);
+
+    List<String> list = new ArrayList<>();
+    if (userData.deviceBroadcast) {
+      list.add(userData.deviceBroadcast);
+    }
+    if (userData.equipmentBroadcast) {
+      list.add(userData.equipmentBroadcast);
+    }
+    if (userData.sceneBroadcast) {
+      list.add(userData.sceneBroadcast);
+    }
+    if (userData.securityBroadcast) {
+      list.add(userData.securityBroadcast);
+    }
+    for (String str : list) {
+    // todo get package name
+       sendBroadcast(intent, isGlobal);
+    }
+  }
+
+  /**
    * @param action          The action to execute.
    * @param args            The exec() arguments.
-   * @param callbackContext The callback context used when calling back into JavaScript.
+   * @param callbackContext The callback context used when calling back into
+   *                        JavaScript.
    * @return
    * @throws JSONException
    */
@@ -204,6 +257,19 @@ public class CDVBroadcaster extends CordovaPlugin {
       }
 
       final boolean isGlobal = args.optBoolean(2, false);
+
+      if (eventName.equalsIgnoreCase("widget")) {
+        cordova.getThreadPool().execute(new Runnable() {
+          @Override
+          public void run() {
+            fireWidgetEvent(eventName, new WidgetData(userData), isGlobal);
+          }
+        });
+
+        callbackContext.success();
+        return true;
+        return true;
+      }
 
       cordova.getThreadPool().execute(new Runnable() {
         @Override
@@ -342,11 +408,7 @@ public class CDVBroadcaster extends CordovaPlugin {
       return result;
     }
     // Boolean | Integer | Long | Double
-    else if (
-      value instanceof String
-        || value instanceof Boolean
-        || value instanceof Integer
-        || value instanceof Long
+    else if (value instanceof String || value instanceof Boolean || value instanceof Integer || value instanceof Long
         || value instanceof Double) {
       return value;
     }
@@ -379,19 +441,19 @@ public class CDVBroadcaster extends CordovaPlugin {
         // String
         if (compare instanceof String)
           returnBundle.putString(key, obj.getString(key));
-          // Boolean
+        // Boolean
         else if (compare instanceof Boolean)
           returnBundle.putBoolean(key, obj.getBoolean(key));
-          // Integer
+        // Integer
         else if (compare instanceof Integer)
           returnBundle.putInt(key, obj.getInt(key));
-          // Long
+        // Long
         else if (compare instanceof Long)
           returnBundle.putLong(key, obj.getLong(key));
-          // Double
+        // Double
         else if (compare instanceof Double)
           returnBundle.putDouble(key, obj.getDouble(key));
-          // Array | JSONArray
+        // Array | JSONArray
         else if (compare.getClass().isArray() || compare instanceof JSONArray) {
           final JSONArray jsonArray = obj.getJSONArray(key);
           int length = jsonArray.length();
@@ -400,7 +462,7 @@ public class CDVBroadcaster extends CordovaPlugin {
             for (int j = 0; j < length; j++)
               stringArray[j] = jsonArray.getString(j);
             returnBundle.putStringArray(key, stringArray);
-            //returnBundle.putParcelableArray(key, obj.get);
+            // returnBundle.putParcelableArray(key, obj.get);
           } else {
             if (key.equals("PLUGIN_CONFIG")) {
               final ArrayList<Bundle> bundleArray = new ArrayList<Bundle>();
@@ -424,7 +486,6 @@ public class CDVBroadcaster extends CordovaPlugin {
       }
 
     }
-
 
     return returnBundle;
   }
