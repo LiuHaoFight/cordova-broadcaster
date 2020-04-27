@@ -57,7 +57,7 @@ public class CDVBroadcaster extends CordovaPlugin {
     final String securityBroadcast;
     final String updateWidgetConfig;
 
-    WidgetData(final JSONObject userData) { 
+    WidgetData(final JSONObject userData) {
       broadcastClassPath = userData.has("broadcastClassPath") ? userData.optString("broadcastClassPath") : null;
       broadcastClassPath = userData.has("deviceBroadcast") ? userData.optString("deviceBroadcast") : null;
       broadcastClassPath = userData.has("equipmentBroadcast") ? userData.optString("equipmentBroadcast") : null;
@@ -226,8 +226,10 @@ public class CDVBroadcaster extends CordovaPlugin {
       list.add(userData.securityBroadcast);
     }
     for (String str : list) {
-    // todo get package name
-       sendBroadcast(intent, isGlobal);
+      // todo check
+      intent.setComponent(
+          new ComponentName(this.webView.getContext().getPackageName(), userData.broadcastClassPath + str));
+      sendBroadcast(intent, isGlobal);
     }
   }
 
