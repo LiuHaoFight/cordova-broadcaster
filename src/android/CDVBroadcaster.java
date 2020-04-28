@@ -1,9 +1,6 @@
 package org.bsc.cordova;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
+import android.content.*;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -17,6 +14,7 @@ import org.json.JSONObject;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import static java.lang.String.format;
 
@@ -59,11 +57,11 @@ public class CDVBroadcaster extends CordovaPlugin {
 
     WidgetData(final JSONObject userData) {
       broadcastClassPath = userData.has("broadcastClassPath") ? userData.optString("broadcastClassPath") : null;
-      broadcastClassPath = userData.has("deviceBroadcast") ? userData.optString("deviceBroadcast") : null;
-      broadcastClassPath = userData.has("equipmentBroadcast") ? userData.optString("equipmentBroadcast") : null;
-      broadcastClassPath = userData.has("sceneBroadcast") ? userData.optString("sceneBroadcast") : null;
-      broadcastClassPath = userData.has("securityBroadcast") ? userData.optString("securityBroadcast") : null;
-      broadcastClassPath = userData.has("updateWidgetConfig") ? userData.optString("updateWidgetConfig") : null;
+      deviceBroadcast = userData.has("deviceBroadcast") ? userData.optString("deviceBroadcast") : null;
+      equipmentBroadcast = userData.has("equipmentBroadcast") ? userData.optString("equipmentBroadcast") : null;
+      sceneBroadcast = userData.has("sceneBroadcast") ? userData.optString("sceneBroadcast") : null;
+      securityBroadcast = userData.has("securityBroadcast") ? userData.optString("securityBroadcast") : null;
+      updateWidgetConfig = userData.has("updateWidgetConfig") ? userData.optString("updateWidgetConfig") : null;
     }
   }
 
@@ -213,20 +211,19 @@ public class CDVBroadcaster extends CordovaPlugin {
     final Intent intent = new Intent(userData.updateWidgetConfig);
 
     List<String> list = new ArrayList<>();
-    if (userData.deviceBroadcast) {
+    if (userData.deviceBroadcast != null) {
       list.add(userData.deviceBroadcast);
     }
-    if (userData.equipmentBroadcast) {
+    if (userData.equipmentBroadcast != null) {
       list.add(userData.equipmentBroadcast);
     }
-    if (userData.sceneBroadcast) {
+    if (userData.sceneBroadcast != null) {
       list.add(userData.sceneBroadcast);
     }
-    if (userData.securityBroadcast) {
+    if (userData.securityBroadcast != null) {
       list.add(userData.securityBroadcast);
     }
     for (String str : list) {
-      // todo check
       intent.setComponent(
           new ComponentName(this.webView.getContext().getPackageName(), userData.broadcastClassPath + str));
       sendBroadcast(intent, isGlobal);
@@ -269,7 +266,6 @@ public class CDVBroadcaster extends CordovaPlugin {
         });
 
         callbackContext.success();
-        return true;
         return true;
       }
 
